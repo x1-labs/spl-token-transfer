@@ -9,7 +9,12 @@ bun install
 To run:
 
 ```bash
-bun run index.ts
+bun run transfer [token mint] [amount] [destination wallet or token account] --keypair ~/.config/solana/id0.json
 ```
 
-This project was created using `bun init` in bun v1.2.10. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+Example:
+
+```bash
+bun run transfer AcCyStN5gYoRpS2FJnATmabqBBiciR461AcvBiy8ScuP 1 C58LhVv822GiE3s84pwb58yiaezWLaFFdUtTWDGFySsU --keypair ~/.config/solana/id0.json
+```
+
