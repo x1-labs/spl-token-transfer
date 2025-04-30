@@ -32,7 +32,7 @@ async function main() {
   const recipient = new PublicKey(recipientStr);
   const amount = parseFloat(amountStr);
 
-  const payerKeypair = Keypair.fromSecretKey(
+  const payer = Keypair.fromSecretKey(
     Uint8Array.from(JSON.parse(fs.readFileSync(argv.keypair, 'utf8')))
   );
 
@@ -40,34 +40,45 @@ async function main() {
 
   const fromTokenAccount = await getOrCreateAssociatedTokenAccount(
     connection,
-    payerKeypair,
+    payer,
     mint,
-    payerKeypair.publicKey
+    payer.publicKey
   );
 
   const toTokenAccount = await getOrCreateAssociatedTokenAccount(
     connection,
-    payerKeypair,
+    payer,
     mint,
     recipient
   );
 
-  const tx = new Transaction().add(
-    createTransferInstruction(
-      fromTokenAccount.address,
-      toTokenAccount.address,
-      payerKeypair.publicKey,
-      BigInt(amount * 10 ** 6) // Adjust decimals as needed
-    )
-  );
+  for (let i = 0; i < 10; i++) {
 
-  console.time("Transaction Confirmation Time");
-  const sig = await connection.sendTransaction(tx, [payerKeypair], {
-    skipPreflight: true,
-  });
+    const tx = new Transaction().add(
+      createTransferInstruction(
+        fromTokenAccount.address,
+        toTokenAccount.address,
+        payer.publicKey,
+        BigInt(amount * 10 ** 6) // Adjust decimals as needed
+      )
+    );
 
-  console.log(`Transaction sent: ${sig}`);
-  console.timeEnd("Transaction Confirmation Time");
+    // sign the transaction
+    tx.feePayer = payer.publicKey;
+    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+    tx.sign(payer); // Sign locally
+
+    const serialized = tx.serialize();
+
+    console.time("Elapsed");
+    const sig = await connection.sendRawTransaction(serialized, {
+      skipPreflight: true,
+    });
+
+    console.log(`Transaction sent: ${sig}`);
+    console.timeEnd("Elapsed");
+  }
 }
 
 main().catch((err) => {
